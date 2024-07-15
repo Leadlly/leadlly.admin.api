@@ -27,7 +27,7 @@ app.use(
   );
 
 //routes
-app.use('/api/auth', authRoutes)
+app.use('/api/auth/admin', authRoutes)
 app.use("/api/google", googleRoutes);
 
 app.get('/', (req, res) => {
