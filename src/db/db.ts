@@ -16,5 +16,10 @@ const ConnectToDB = async () => {
   }
 };
 
-export { db };
+let mentor_db: mongoose.Connection;
+const mentor_db_url = process.env.LEADLLY_MENTOR_DB_URL as string;
+mentor_db = mongoose.createConnection(mentor_db_url);
+
+export  {mentor_db, db};
+
 export default ConnectToDB;
