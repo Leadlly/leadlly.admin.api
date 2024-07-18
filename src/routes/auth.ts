@@ -20,6 +20,6 @@ router.get("/logout", logout);
 router.post("/forgetpassword", forgotPassword);
 router.put("/resetpassword/:token", resetPassword);
 router.get("/user", checkAuth, getUser);
-router.get("/mentor", checkAuth,  getMentor);
+router.get("/mentor",  getMentor);
 
 export default router;
