@@ -19,12 +19,12 @@ app.use(cookieParser())
 app.use(express.json())
 app.use(urlencoded({extended: true}))
 app.use(
-    cors({
-      origin: [process.env.FRONTEND_URL!],
-      methods: ["GET", "POST", "PUT", "DELETE"],
-      credentials: true,
-    }),
-  );
+  cors({
+    origin: [process.env.FRONTEND_URL!],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  }),
+);
 
 //routes
 app.use('/api/auth/admin', authRoutes)

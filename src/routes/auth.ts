@@ -1,6 +1,7 @@
 import express from "express";
 import {
   forgotPassword,
+  getMentor,
   getUser,
   login,
   logout,
@@ -19,5 +20,6 @@ router.get("/logout", logout);
 router.post("/forgetpassword", forgotPassword);
 router.put("/resetpassword/:token", resetPassword);
 router.get("/user", checkAuth, getUser);
+router.get("/mentor",  getMentor);
 
 export default router;
