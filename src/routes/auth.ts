@@ -7,6 +7,7 @@ import {
   logout,
   register,
   resetPassword,
+  verifyMentor,
 } from "../controllers/Auth";
 import { checkAuth } from "../middleware/checkAuth";
 
@@ -21,5 +22,6 @@ router.post("/forgetpassword", forgotPassword);
 router.put("/resetpassword/:token", resetPassword);
 router.get("/user", checkAuth, getUser);
 router.get("/mentor",  getMentor);
+router.put("/verify/:id", verifyMentor)
 
 export default router;
