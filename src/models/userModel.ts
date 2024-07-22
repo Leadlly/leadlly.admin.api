@@ -90,6 +90,6 @@ userSchema.methods.getToken = async function (): Promise<string> {
   return resetToken;
 };
 
-const User = mongoose.model<IUser>('User', userSchema);
+const User = mongoose.model<IUser>('Admin', userSchema);
 
 export default User;

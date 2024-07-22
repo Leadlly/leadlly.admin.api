@@ -49,7 +49,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
   try {
     // Find user by email
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password +salt');
     if (!user) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
@@ -60,6 +60,13 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
+    setCookie({
+      user,
+      res,
+      next,
+      message: "Login Success",
+      statusCode: 200,
+    });
     res.status(200).json({ message: 'Logged in successfully' });
   } catch (error: any) {
     console.log(error);
