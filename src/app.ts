@@ -6,6 +6,7 @@ import cors from 'cors';
 import errorMiddleware from './middleware/error';
 import authRoutes from './routes/auth'
 import googleRoutes from './routes/googleAuth'
+import mentorRoutes from './routes/mentorRoutes'
 
 
 config({
@@ -29,6 +30,7 @@ app.use(
 //routes
 app.use('/api/auth/admin', authRoutes)
 app.use("/api/google", googleRoutes);
+app.use("/api/mentor", mentorRoutes);
 
 app.get('/', (req, res) => {
     res.send('Hello, world!');

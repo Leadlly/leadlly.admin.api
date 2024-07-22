@@ -5,8 +5,6 @@ import setCookie from "../../utils/setCookies";
 import crypto from "crypto";
 // import { db } from "../../db/db";
 import { sendMail } from "../../utils/sendMail";
-import { db, mentor_db } from "../../db/db";
-import { ObjectId } from 'mongodb';
 
 const hashPassword = (password: string, salt: string): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -301,45 +299,6 @@ export const getUser = async(
     res.status(200).json({
       success: true,
       user
-    });
-
-  } catch (error: any) {
-    next(new CustomError(error.message));
-  }
-};
-export const getMentor = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const mentors = await db.collection('mentors').find().toArray();
-
-    if (!mentors || mentors.length === 0) {
-      return next(new CustomError("No mentors found", 404));
-    }
-
-    res.status(200).json({
-      success: true,
-      mentors
-    });
-
-  } catch (error: any) {
-    next(new CustomError(error.message));
-  }
-};
-
-export const verifyMentor = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const mentorId = req.params.id;
-    const mentor = await db.collection('mentors').findOne({ _id: new ObjectId(mentorId) });
-
-    if (!mentor) {
-      return next(new CustomError("Mentor not found", 404));
-    }
-
-    const updatedStatus = mentor.status === 'Verified' ? 'Not Verified' : 'Verified';
-    await mentor_db.collection('mentors').updateOne({ _id: new ObjectId(mentorId) }, { $set: { status: updatedStatus } });
-
-    res.status(200).json({
-      success: true,
-      message: `Mentor ${updatedStatus}`
     });
 
   } catch (error: any) {
