@@ -73,163 +73,53 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     next(new CustomError(error.message));
   }
 };
-// export const resentOtp = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) => {
-//   console.log("inside resent otp")
-//   try {
-//     const { email } = req.body;
-//     console.log(email)
 
-//     const otpRecord = await db.collection("otps").findOne({ email });
-//     if (!otpRecord) return next(new CustomError("User not found", 404));
-
-//     const OTP = generateOTP();
-
-//     await otpQueue.add("otpVerify", {
-//       options: {
-//         email,
-//         subject: "Verification",
-//         message: `Your verification OTP for registration is ${OTP}`,
-//       },
-//     });
-
-//     const hashedOTP = crypto.createHash('sha256').update(OTP).digest('hex');
-//     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); 
-//     await db.collection("otps").updateOne(
-//       { email },
-//       {
-//         $set: {
-//           otp: hashedOTP,
-//           expiresAt,
-//         },
-//       }
-//     );
-
-//     res.status(200).json({
-//       success: true,
-//       message: `OTP resent successfully to ${email}`,
-//     });
-//   } catch (error: any) {
-//     console.log(error);
-//     next(new CustomError(error.message));
-//   }
-// };
-
-// export const otpVerification = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) => {
-//   try {
-//     const { otp, email } = req.body;
-
-//     const otpRecord = await db.collection("otps").findOne({ email });
-//     if (!otpRecord) return next(new CustomError("OTP not found", 404));
-
-//     const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
-//     if (hashedOtp !== otpRecord.otp || otpRecord.expiresAt < new Date(Date.now())) {
-//       return next(new CustomError("Invalid or expired OTP", 400));
-//     }
-
-//     const newUser = otpRecord.newUser;
-//     const user = await User.create(newUser);
-//     await db.collection("otps").deleteOne({ email });
-
-//     setCookie({
-//       user,
-//       res,
-//       next,
-//       message: "Verification Success",
-//       statusCode: 200,
-//     });
-//   } catch (error: any) {
-//     console.log(error);
-//     next(new CustomError(error.message));
-//   }
-// };
-
-
-
-// export const forgotPassword = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) => {
-//   try {
-//     const { email } = req.body;
-//     const user = await User.findOne({ email });
-//     if (!user) return next(new CustomError("Email not registered", 400));
-
-//     const resetToken = await user.getToken();
-
-//     await user.save(); //saving the token in user
-
-//     const url = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
-//     await otpQueue.add("otpVerify", {
-//       options: {
-//         email: email,
-//         subject: "Password Reset",
-//         message: `You reset password link is here ${url}`,
-//       },
-//     });
-
-//     res.status(200).json({
-//       success: true,
-//       message: `Reset password link sent to ${email}`,
-//     });
-//   } catch (error: any) {
-//     next(new CustomError(error.message));
-//   }
-// };
-
-export const forgotPassword = async (req: Request, res: Response,  next: NextFunction) => {
-  const { email } = req.body;
-
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
+    const { email } = req.body;
     const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
+    if (!user) return next(new CustomError("Email not registered", 400));
 
     const resetToken = await user.getToken();
-    await user.save();
 
-    const resetUrl = `http://localhost:4000/api/auth/admin/resetpassword/${resetToken}`;
+    await user.save(); //saving the token in user
 
-    const message = `
-      <h1>Password Reset</h1>
-      <p>You requested a password reset. Please go to this link to reset your password:</p>
-      <a href=${resetUrl} clicktracking=off>${resetUrl}</a>
-    `;
+    const url = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
+    // await otpQueue.add("otpVerify", {
+    //   options: {
+    //     email: email,
+    //     subject: "Password Reset",
+    //     message: `You reset password link is here ${url}`,
+    //   },
+    // });
 
-    try {
-      await sendMail({
-        email: user.email,
-        subject: 'Password Reset Request',
-        message,
-      });
+    await sendMail({
+      email,
+      subject: "Password Reset",
+      message: url,
+      tag: 'password_reset'
+    })
 
-      res.status(200).json({
-        success: true,
-        message: 'Email sent',
-      });
-    } catch (error) {
-      user.resetPasswordToken = null;
-      user.resetTokenExpiry = null;
+     setCookie({
+      user,
+      res,
+      next,
+      message: "Login Success",
+      statusCode: 200,
+    });
 
-      await user.save();
-
-      return res.status(500).json({ success: false, message: 'Email could not be sent' });
-    }
+    res.status(200).json({
+      success: true,
+      message: `Reset password link sent to ${email}`,
+    });
   } catch (error: any) {
-    console.log(error);
     next(new CustomError(error.message));
+  }
 };
-}
 export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
   const { token } = req.params as { token: string };
   const { password } = req.body;

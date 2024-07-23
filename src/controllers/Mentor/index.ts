@@ -24,18 +24,27 @@ export const getMentor = async (req: Request, res: Response, next: NextFunction)
   export const verifyMentor = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const mentorId = req.params.id;
+  
       const mentor = await db.collection('mentors').findOne({ _id: new mongoose.Types.ObjectId(mentorId) });
   
       if (!mentor) {
         return next(new CustomError("Mentor not found", 404));
       }
   
-      const updatedStatus = mentor.status === 'Verified' ? 'Not Verified' : 'Verified';
-      await db.collection('mentors').updateOne({ _id: new Object(mentorId) }, { $set: { status: updatedStatus } });
+      const newStatus = req.body.status;
+  
+ 
+      
+      const updateQuery = {
+        filter: { _id: new mongoose.Types.ObjectId(mentorId) },
+        update: { $set: { status: newStatus } }
+      };
+      
+      await db.collection('mentors').updateOne(updateQuery.filter, updateQuery.update);
   
       res.status(200).json({
         success: true,
-        message: `Mentor ${updatedStatus}`
+        message: `Mentor ${newStatus}`
       });
   
     } catch (error: any) {
