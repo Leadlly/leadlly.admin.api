@@ -51,3 +51,50 @@ export const getMentor = async (req: Request, res: Response, next: NextFunction)
       next(new CustomError(error.message));
     }
   };
+
+  export const getMentorWithStudents = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const mentorId = req.params.id; 
+      const objectId = new mongoose.Types.ObjectId(mentorId);
+  
+      const mentor = await db.collection('mentors').aggregate([
+        {
+          $match: { _id: objectId }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'students.id',
+            foreignField: '_id',
+            as: 'students'
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            firstname: 1,
+            lastname: 1,
+            email: 1,
+            students: {
+              _id: 1,
+              firstname: 1,
+              lastname: 1,
+              email: 1
+            }
+          }
+        }
+      ]).toArray();
+  
+      if (!mentor || mentor.length === 0) {
+        return next(new CustomError("Mentor not found", 404));
+      }
+  
+      res.status(200).json({
+        success: true,
+        mentor: mentor[0]
+      });
+  
+    } catch (error: any) {
+      next(new CustomError(error.message));
+    }
+  };
