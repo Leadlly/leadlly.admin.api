@@ -79,7 +79,8 @@ export const getMentor = async (req: Request, res: Response, next: NextFunction)
               _id: 1,
               firstname: 1,
               lastname: 1,
-              email: 1
+              email: 1,
+              academic: 1
             }
           }
         }
