@@ -19,6 +19,7 @@ interface IUser extends Document {
     degree?: string;
     dob?: string; 
   };
+  students: Array<{ id: mongoose.Types.ObjectId }>;
   createdAt?: Date; 
   resetPasswordToken?: string | null;
   resetTokenExpiry?: string | null;

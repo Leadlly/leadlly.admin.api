@@ -7,6 +7,7 @@ import errorMiddleware from './middleware/error';
 import authRoutes from './routes/auth'
 import googleRoutes from './routes/googleAuth'
 import mentorRoutes from './routes/mentorRoutes'
+import studentRoutes from './routes/studentRoute'
 
 
 config({
@@ -31,6 +32,7 @@ app.use(
 app.use('/api/auth/admin', authRoutes)
 app.use("/api/google", googleRoutes);
 app.use("/api/mentor", mentorRoutes);
+app.use("/api/student", studentRoutes);
 
 app.get('/', (req, res) => {
     res.send('Hello, world!');
