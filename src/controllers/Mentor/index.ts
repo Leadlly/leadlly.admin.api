@@ -136,7 +136,91 @@ export const getMentor = async (req: Request, res: Response, next: NextFunction)
       next(new CustomError(error.message));
     }
   };
-
-
-
   
+ 
+  export const getStudentsWithNullMentor = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { mentorId } = req.query as { mentorId?: string };
+      const { query } = req.query as { query?: string };
+  
+      if (!mentorId || !mongoose.Types.ObjectId.isValid(mentorId)) {
+        return next(new CustomError("Invalid mentor ID", 400));
+      }
+  
+      const mentorObjectId = new mongoose.Types.ObjectId(mentorId);
+  
+      // Fetch the mentor preferences
+      const mentor = await db.collection('mentors').findOne({ _id: mentorObjectId });
+  
+      if (!mentor) {
+        return next(new CustomError("Mentor not found", 404));
+      }
+  
+      const { competitiveExam, standard } = mentor.preference;
+      const mentorGender = mentor.about.gender || '';
+  
+      console.log('Mentor Preferences:', { standard, competitiveExam, mentorGender });
+  
+      let filter: any = {
+        $or: [
+          { "mentor._id": null },
+          { "mentor._id": { $exists: false } },
+        ],
+      };
+  
+      if (standard.length > 0) {
+        filter["academic.standard"] = { $exists: true };
+      }
+      if (competitiveExam.length > 0) {
+        filter["academic.competitiveExam"] = { $in: competitiveExam };
+      }
+  
+      // Handle search query if provided
+      if (query) {
+        filter = {
+          ...filter,
+          $or: [
+            { firstname: { $regex: query, $options: 'i' } },
+            { lastname: { $regex: query, $options: 'i' } },
+            { email: { $regex: query, $options: 'i' } },
+          ],
+        };
+      }
+  
+      // Find all users with a null mentor ID
+      const usersWithNullMentor = await db.collection('users').find(filter).project({
+        _id: 1,
+        firstname: 1,
+        lastname: 1,
+        email: 1,
+        academic: 1,
+        mentor: 1,
+        about: 1,
+      }).toArray();
+  
+      console.log('Users with null mentor ID:', usersWithNullMentor);
+  
+      // Separate users by gender
+      const usersWithSameGender = usersWithNullMentor.filter(user => user.about.gender === mentorGender);
+      const usersWithDifferentGender = usersWithNullMentor.filter(user => user.about.gender !== mentorGender && user.about.gender !== null);
+      const usersWithUnknownGender = usersWithNullMentor.filter(user => user.about.gender === null);
+  
+      // Combine the lists with same gender users first
+      const students = [...usersWithSameGender, ...usersWithDifferentGender, ...usersWithUnknownGender];
+  
+      if (students.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No students found matching the criteria",
+        });
+      }
+  
+      res.status(200).json({
+        success: true,
+        students: students,
+      });
+    } catch (error: any) {
+      console.error(`Error: ${error.message}`);
+      next(new CustomError(error.message));
+    }
+  };
