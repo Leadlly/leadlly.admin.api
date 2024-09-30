@@ -35,7 +35,13 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       salt,
       password: hashedPassword,
     });
-
+    setCookie({
+      user: newUser,
+      res,
+      next,
+      message: "Register Success",
+      statusCode: 200,
+    });
     await newUser.save();
 
     res.status(201).json({ message: 'User registered successfully' });
