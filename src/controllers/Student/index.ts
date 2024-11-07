@@ -3,6 +3,23 @@ import { db } from "../../db/db";
 import { CustomError } from "../../middleware/error";
 import mongoose from "mongoose";
 
+export const getStudent = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const students = await db.collection('users').find().toArray();
+
+    if (!students || students.length === 0) {
+      return next(new CustomError("No students found", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      students
+    });
+
+  } catch (error: any) {
+    next(new CustomError(error.message));
+  }
+};
 
 export const allocateStudents = async (req: Request, res: Response, next: NextFunction) => {
     try {
