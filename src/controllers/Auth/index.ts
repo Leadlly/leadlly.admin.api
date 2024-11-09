@@ -1,9 +1,9 @@
+import  jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from "express";
 import User from "../../models/userModel";
 import { CustomError } from "../../middleware/error";
 import setCookie from "../../utils/setCookies";
 import crypto from "crypto";
-// import { db } from "../../db/db";
 import { sendMail } from "../../utils/sendMail";
 
 const hashPassword = (password: string, salt: string): Promise<string> => {
@@ -38,7 +38,18 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
     await newUser.save();
 
-    res.status(201).json({ message: 'User registered successfully' });
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: newUser._id, email: newUser.email },
+      process.env.JWT_SECRET!,
+      { expiresIn: '1h' } // Token valid for 1 hour
+    );
+
+    // Send response with token
+    res.status(201).json({
+      message: 'User registered successfully',
+      token, // Return the token to the client
+    });
   } catch (error: any) {
     console.log(error);
     next(new CustomError(error.message));
@@ -60,14 +71,25 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
-    setCookie({
-      user,
-      res,
-      next,
-      message: "Login Success",
-      statusCode: 200,
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET!, // Ensure your JWT secret is available in environment variables
+      { expiresIn: '1h' } // Token valid for 1 hour
+    );
+
+    // Optionally set the token as an HTTP-only cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
+      maxAge: 3600000, // 1 hour
     });
-    res.status(200).json({ message: 'Logged in successfully' });
+
+    // Send response with token
+    res.status(200).json({
+      message: 'Logged in successfully',
+      token, // Return the token to the client
+    });
   } catch (error: any) {
     console.log(error);
     next(new CustomError(error.message));

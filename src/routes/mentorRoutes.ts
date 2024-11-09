@@ -5,8 +5,8 @@ import { getMentor, getMentorWithStudents, verifyMentor } from "../controllers/M
 
 const router = express.Router();
 
-router.get("/getmentor", checkAuth, getMentor);
+router.get("/getmentor",  getMentor);
 router.put("/verify/:id", checkAuth, verifyMentor)
-router.get("/getstudent/:id", checkAuth, getMentorWithStudents)
+router.get("/getstudent/:id",  getMentorWithStudents)
 
 export default router;
