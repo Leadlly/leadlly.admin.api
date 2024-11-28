@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../../db/db";
 import { CustomError } from "../../middleware/error";
 import mongoose from "mongoose";
-
+import { ObjectId } from "mongodb";
 export const getMentor = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const mentors = await db.collection('mentors').find().toArray();
@@ -21,6 +21,30 @@ export const getMentor = async (req: Request, res: Response, next: NextFunction)
     }
   };
   
+  export const getMentorById = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params; 
+  
+      if (!ObjectId.isValid(id)) {
+        return next(new CustomError("Invalid ID format", 400));
+      }
+  
+      const mentor = await db.collection('mentors').findOne({ _id: new ObjectId(id) });
+  
+      if (!mentor) {
+        return next(new CustomError("Mentor not found", 404));
+      }
+  
+      res.status(200).json({
+        success: true,
+        mentor,
+      });
+  
+    } catch (error: any) {
+      next(new CustomError(error.message));
+    }
+  };
+
   export const verifyMentor = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const mentorId = req.params.id;

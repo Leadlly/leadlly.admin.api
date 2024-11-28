@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../../db/db";
 import { CustomError } from "../../middleware/error";
 import mongoose from "mongoose";
+import { ObjectId } from "mongodb";
 
 export const getStudent = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -20,7 +21,30 @@ export const getStudent = async (req: Request, res: Response, next: NextFunction
     next(new CustomError(error.message));
   }
 };
+export const getStudentById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params; // id will come from the route params
 
+    // Validate if ID is a valid ObjectId
+    if (!ObjectId.isValid(id)) {
+      return next(new CustomError("Invalid ID format", 400));
+    }
+
+    const student = await db.collection('users').findOne({ _id: new ObjectId(id) });
+
+    if (!student) {
+      return next(new CustomError("Student not found", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      student,
+    });
+
+  } catch (error: any) {
+    next(new CustomError(error.message));
+  }
+};
 export const allocateStudents = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { mentorId } = req.params;
