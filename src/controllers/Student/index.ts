@@ -140,77 +140,115 @@ export const deallocateStudents = async (req: Request, res: Response, next: Next
 };
 
 export const getStudentsWithNullMentor = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { query } = req.query as { query?: string };
-      
-      let filter: any = { "mentor._id": null };
-      
-      if (query) {
-        // Exact match filter
-        const exactMatchFilter = {
-          $or: [
-            { firstname: query },
-            { lastname: query },
-            { email: query },
-          ],
-        };
-  
-        // Search for exact matches first
-        const exactMatches = await db.collection('users').find({
-          ...filter,
-          $or: [
-            exactMatchFilter
-          ]
-        }).project({
+  try {
+    const { mentorId, query } = req.query as { mentorId?: string; query?: string };
+
+    if (!mentorId) {
+      return res.status(400).json({
+        success: false,
+        message: "Mentor ID is required",
+      });
+    }
+
+    const objectId = new mongoose.Types.ObjectId(mentorId);
+
+    // Fetch mentor details to determine gender
+    const mentor = await db.collection("mentors").findOne(
+      { _id: objectId },
+      { projection: { "about.gender": 1 } }
+    );
+
+    if (!mentor) {
+      return res.status(404).json({
+        success: false,
+        message: "Mentor not found",
+      });
+    }
+
+    const mentorGender = mentor.about?.gender; // Mentor's gender from `about`
+
+    // Base filter for students with null mentor
+    let filter: any = { "mentor._id": null };
+
+    // Apply query filter if provided
+    if (query) {
+      const exactMatchFilter = {
+        $or: [
+          { firstname: query },
+          { lastname: query },
+          { email: query },
+        ],
+      };
+
+      const exactMatches = await db.collection("users").find({
+        ...filter,
+        $or: [exactMatchFilter],
+      })
+        .project({
           _id: 1,
           firstname: 1,
           lastname: 1,
           email: 1,
           academic: 1,
           mentor: 1,
-        }).toArray();
-  
-        if (exactMatches.length > 0) {
-          return res.status(200).json({
-            success: true,
-            students: exactMatches,
-          });
-        }
-  
-        // If no exact matches, search for partial matches
-        filter = {
-          ...filter,
-          $or: [
-            { firstname: { $regex: query, $options: 'i' } },
-            { lastname: { $regex: query, $options: 'i' } },
-            { email: { $regex: query, $options: 'i' } },
-          ],
-        };
+          "about.gender": 1,
+        })
+        .toArray();
+
+      if (exactMatches.length > 0) {
+        return res.status(200).json({
+          success: true,
+          students: exactMatches.sort((a: any, b: any) =>
+            a.about?.gender === mentorGender ? -1 : b.about?.gender === mentorGender ? 1 : 0
+          ),
+        });
       }
-  
-      const students = await db.collection('users').find(filter).project({
+
+      filter = {
+        ...filter,
+        $or: [
+          { firstname: { $regex: query, $options: "i" } },
+          { lastname: { $regex: query, $options: "i" } },
+          { email: { $regex: query, $options: "i" } },
+        ],
+      };
+    }
+
+    // Fetch students with null mentor
+    const students = await db.collection("users")
+      .find(filter)
+      .project({
         _id: 1,
         firstname: 1,
         lastname: 1,
         email: 1,
         academic: 1,
         mentor: 1,
-      }).toArray();
-  
-      if (students.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "No students found with null mentor",
-        });
-      }
-  
-      res.status(200).json({
-        success: true,
-        students: students,
+        "about.gender": 1,
+      })
+      .toArray();
+
+    if (students.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No students found with null mentor",
       });
-    } catch (error: any) {
-      console.error(`Error: ${error.message}`);
-      next(new CustomError(error.message));
     }
-  };
+
+    // Sort students based on mentor's gender
+    const sortedStudents = students.sort((a: any, b: any) =>
+      a.about?.gender === mentorGender ? -1 : b.about?.gender === mentorGender ? 1 : 0
+    );
+
+    res.status(200).json({
+      success: true,
+      students: sortedStudents,
+    });
+  } catch (error: any) {
+    console.error(`Error: ${error.message}`);
+    next(new CustomError(error.message));
+  }
+};
+
+
   

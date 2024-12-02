@@ -18,6 +18,7 @@ interface IUser extends Document {
     college?: string;
     degree?: string;
     dob?: string; 
+    gender?: string;
   };
   students: Array<{ id: mongoose.Types.ObjectId }>;
   createdAt?: Date; 
