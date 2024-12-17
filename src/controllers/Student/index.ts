@@ -127,6 +127,7 @@ export const getStudentsWithNullMentor = async (req: Request, res: Response, nex
           email: 1,
           academic: 1,
           mentor: 1,
+          phone: 1,
         }).toArray();
   
         if (exactMatches.length > 0) {
@@ -154,6 +155,9 @@ export const getStudentsWithNullMentor = async (req: Request, res: Response, nex
         email: 1,
         academic: 1,
         mentor: 1,
+        phone: 1,
+      }).sort({
+        _id: -1
       }).toArray();
   
       if (students.length === 0) {

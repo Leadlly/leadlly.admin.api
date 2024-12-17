@@ -9,7 +9,5 @@ const port = process.env.PORT || 4001
 ConnectToDB(); //main db
 
 // otpWorker
-const handler = serverless(app);
-app.listen(port, () => console.log(`Server is working on port ${port}`))
 
-export { handler };
+app.listen(port, () => console.log(`Server is working on port ${port}`))
