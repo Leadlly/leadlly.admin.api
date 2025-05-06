@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomError } from "./error";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import User from "../models/userModel";
+import {Admin} from "../models/adminModel";
 
 declare global {
   namespace Express {
@@ -22,7 +22,7 @@ export const checkAuth = async (
   if (!secret) return next(new CustomError("Jwt Secret not defined", 400));
 
   const decoded = jwt.verify(token, secret) as JwtPayload;
-  req.user = await User.findById(decoded.id);
+  req.user = await Admin.findById(decoded.id);
 
   next();
 };

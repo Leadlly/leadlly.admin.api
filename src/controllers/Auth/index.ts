@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import User from "../../models/userModel";
+import {Admin} from "../../models/adminModel";
 import { CustomError } from "../../middleware/error";
 import setCookie from "../../utils/setCookies";
 import crypto from "crypto";
@@ -20,7 +20,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     const { firstname, email, password } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await Admin.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -29,7 +29,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     const salt = crypto.randomBytes(16).toString('hex');
     const hashedPassword = await hashPassword(password, salt);
 
-    const newUser = new User({
+    const newUser = new Admin({
       firstname,
       email,
       salt,
@@ -49,7 +49,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
   try {
     // Find user by email
-    const user = await User.findOne({ email }).select('+password +salt');
+    const user = await Admin.findOne({ email }).select('+password +salt');
     if (!user) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
@@ -81,7 +81,7 @@ export const forgotPassword = async (
 ) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await Admin.findOne({ email });
     if (!user) return next(new CustomError("Email not registered", 400));
 
     const resetToken = await user.getToken();
@@ -133,7 +133,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
   
       console.log('Reset Password Token:', resetPasswordToken);
   
-      const user = await User.findOne({
+      const user = await Admin.findOne({
         resetPasswordToken,
         resetTokenExpiry: { $gt: Date.now() },
       });
@@ -189,7 +189,7 @@ export const getUser = async(
   next: NextFunction
 ) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await Admin.findById(req.user._id);
     if (!user)
       return next(new CustomError("User not found", 400));
 

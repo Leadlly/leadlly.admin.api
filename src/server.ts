@@ -4,7 +4,7 @@ import serverless from "serverless-http";
 // import { otpWorker } from "./services/bullmq/worker";
 
 
-const port = process.env.PORT || 4001
+const port = process.env.PORT || 4002
 
 ConnectToDB(); //main db
 

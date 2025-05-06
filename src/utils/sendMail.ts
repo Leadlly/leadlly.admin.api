@@ -5,7 +5,7 @@ export type Options = {
   email: string;
   subject: string;
   message: string;
-  tag: string
+  tag?: string
 };
 export const sendMail = async (options: Options) => {
   try {
