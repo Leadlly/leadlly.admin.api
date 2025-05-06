@@ -1,20 +1,18 @@
 import express from "express";
-import { checkAuth } from "../../middlewares/checkAuth";
-import { checkRole } from "../../middlewares/checkRole";
+import { checkAuth } from "../middleware/checkAuth";
+import { checkRole } from "../middleware/checkRole";
 import {
   createBatch,
   getMentorBatches,
   getBatchDetails,
   updateBatch,
-  deleteBatch,
   regenerateShareCode
-} from "../../controllers/Admins/BatchManagement";
-import { createBatchWork, submitBatchWork } from "../../controllers/Class/work";
+} from "../controllers/BatchManagement";
 
 const router = express.Router();
 
 // All routes are protected for teachers only
-router.use(checkAuth, checkRole(['teacher']));
+router.use(checkAuth, checkRole("admin"));
 
 // Create new batch
 router.post("/create", createBatch);
@@ -28,16 +26,8 @@ router.get("/:id", getBatchDetails);
 // Update batch
 router.put("/:id", updateBatch);
 
-// Delete batch
-router.delete("/:id", deleteBatch);
-
 // Regenerate share code
 router.post("/:id/regenerate-code", regenerateShareCode);
 
-// Teacher routes (protected by role)
-router.post("/create", createBatchWork);
-
-// Student routes
-router.post("/submit/:workId", checkAuth, submitBatchWork);
 
 export default router;

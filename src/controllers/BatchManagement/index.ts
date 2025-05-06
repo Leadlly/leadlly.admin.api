@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import Batch from "../../models/batchModel";
 import { CustomError } from "../../middleware/error";
+import Institue from "../../models/instituteModel";
 
 // Create a new batch
 export const createBatch = async ( 
@@ -15,11 +16,12 @@ export const createBatch = async (
       subjects,
       schedule,
       startDate,
-      endDate
+      endDate,
+      institute // Add institute ID to request body
     } = req.body;
 
     // Validate required fields
-    if (!name || !standard || !subjects || !schedule || !startDate) {
+    if (!name || !standard || !subjects || !schedule || !startDate || !institute) {
       return next(new CustomError("Please provide all required fields", 400));
     }
 
@@ -33,11 +35,19 @@ export const createBatch = async (
       name,
       standard,
       subjects,
-      mentor: req.user._id, // Assuming mentor's ID is available in req.user after authentication
+      mentor: req.user._id,
+      institute, // Add institute reference
       schedule,
       startDate,
       endDate: endDate || null
     });
+
+    // Update institute's batches array
+    await Institue.findByIdAndUpdate(
+      institute,
+      { $push: { batches: batch._id } },
+      { new: true }
+    );
 
     res.status(201).json({
       success: true,
@@ -134,36 +144,6 @@ export const updateBatch = async (
       success: true,
       message: "Batch updated successfully",
       data: updatedBatch
-    });
-
-  } catch (error: any) {
-    next(new CustomError(error.message, 500));
-  }
-};
-
-// Delete batch
-export const deleteBatch = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const batch = await Batch.findById(req.params.id);
-
-    if (!batch) {
-      return next(new CustomError("Batch not found", 404));
-    }
-
-    // Check if the authenticated user is the mentor of this batch
-    if (batch.mentor.toString() !== req.user._id.toString()) {
-      return next(new CustomError("Not authorized to delete this batch", 403));
-    }
-
-    await batch.deleteOne();
-
-    res.status(200).json({
-      success: true,
-      message: "Batch deleted successfully"
     });
 
   } catch (error: any) {
