@@ -18,17 +18,19 @@ const setCookie = async ({ user, res, next, message, statusCode }: Cookie) => {
       const token = jwt.sign({ id: user._id }, secret);
 
       res
-        .status(statusCode)
-        .cookie("token", token, {
-          httpOnly: true,
-          maxAge: 30 * 24 * 60 * 60 * 1000,
-          sameSite: "none",
-          secure: true,
-        })
-        .json({
-          success: true,
-          message,
-        });
+      .status(statusCode)
+      .cookie("token", token, {
+        httpOnly: true,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        sameSite: "lax",
+        secure: false,
+      })
+      .json({
+        success: true,
+        message,
+        token,
+        user
+      });
   
   } catch (error: any) {
     next(new CustomError(error.message));

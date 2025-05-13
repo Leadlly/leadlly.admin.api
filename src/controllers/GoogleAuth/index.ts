@@ -4,6 +4,7 @@ import { CustomError } from "../../middleware/error";
 import {Admin} from "../../models/adminModel";
 import setCookie from "../../utils/setCookies";
 
+
 export const googleAuth = async (
   req: Request,
   res: Response,
@@ -28,7 +29,7 @@ export const googleAuth = async (
     if (!tokenInfo || !userData)
       return next(new CustomError("Invalid token", 401));
 
-    const { email, name } = userData;
+    const { email, name } = userData as { email: string; name: string };
 
     if (!email) return next(new CustomError("Email not found", 404));
     const nameArray = name.split(" ");

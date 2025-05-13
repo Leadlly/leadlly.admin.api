@@ -34,13 +34,21 @@ const instituteSchema = new Schema({
   },
   email: {
     type: String,
-    required: [true, 'Email is required'],
-    unique: true,
+    // unique: true,
     lowercase: true
   },
   website: {
     type: String
   },
+  subjects: [{
+    type: String,
+    required: true,
+    lowercase: true
+  }],
+  standards: [{
+    type: String,
+    required: true,
+  }],
   admins: [{
     type: Schema.Types.ObjectId,
     required: true

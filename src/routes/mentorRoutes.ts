@@ -1,7 +1,7 @@
 import express from "express";
 
 import { checkAuth } from "../middleware/checkAuth";
-import { getMentor, getMentorWithStudents, verifyMentor } from "../controllers/Mentor";
+import { getMentor, getMentorWithStudents, verifyMentor } from "../controllers/MentorManagement";
 
 const router = express.Router();
 

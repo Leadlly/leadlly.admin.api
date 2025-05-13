@@ -17,17 +17,13 @@ export const createBatch = async (
       schedule,
       startDate,
       endDate,
-      institute // Add institute ID to request body
+      institute, // institute ID to request body
+      mentors, // array of mentor IDs to request body
     } = req.body;
 
     // Validate required fields
-    if (!name || !standard || !subjects || !schedule || !startDate || !institute) {
+    if (!name || !standard || !subjects ) {
       return next(new CustomError("Please provide all required fields", 400));
-    }
-
-    // Validate schedule format
-    if (!schedule.days || !schedule.startTime || !schedule.endTime) {
-      return next(new CustomError("Please provide complete schedule details", 400));
     }
 
     // Create new batch with mentor ID from authenticated user
@@ -35,7 +31,7 @@ export const createBatch = async (
       name,
       standard,
       subjects,
-      mentor: req.user._id,
+      mentors, // Add mentor reference
       institute, // Add institute reference
       schedule,
       startDate,
@@ -60,6 +56,8 @@ export const createBatch = async (
     });
 
   } catch (error: any) {
+
+    console.log(error);
     next(new CustomError(error.message, 500));
   }
 };
@@ -72,6 +70,35 @@ export const getMentorBatches = async (
 ) => {
   try {
     const batches = await Batch.find({ mentor: req.user._id })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: batches.length,
+      data: batches
+    });
+
+  } catch (error: any) {
+    next(new CustomError(error.message, 500));
+  }
+};
+
+// Get all batches for an institute
+export const getInstituteBatches = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { instituteId } = req.params;
+
+    if (!instituteId) {
+      return next(new CustomError("Institute ID is required", 400));
+    }
+
+    // Find all batches for the institute
+    const batches = await Batch.find({ institute: instituteId })
+      .populate('mentors', 'firstname lastname email') // Populate mentor details
       .sort({ createdAt: -1 });
 
     res.status(200).json({

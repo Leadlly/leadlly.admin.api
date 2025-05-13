@@ -6,7 +6,8 @@ import {
   getMentorBatches,
   getBatchDetails,
   updateBatch,
-  regenerateShareCode
+  regenerateShareCode,
+  getInstituteBatches
 } from "../controllers/BatchManagement";
 
 const router = express.Router();
@@ -22,6 +23,8 @@ router.get("/all", getMentorBatches);
 
 // Get single batch details
 router.get("/:id", getBatchDetails);
+
+router.get("/institute/:instituteId", getInstituteBatches)
 
 // Update batch
 router.put("/:id", updateBatch);

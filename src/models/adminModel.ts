@@ -18,6 +18,10 @@ const adminSchema = new Schema({
     required: true,
     unique: true,
   },
+  institutes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Institue",
+  }],
   role: {
     type: String,
     enum: ['admin', 'superadmin'],

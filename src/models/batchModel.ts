@@ -63,11 +63,10 @@ const batchSchema = new Schema({
     type: String,
     required: [true, "Please specify at least one subject"]
   }],
-  mentor: {
+  mentors: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Mentor',
-    required: true
-  },
+  }],
   // students: [{
   //   type: mongoose.Schema.Types.ObjectId,
   //   ref: 'User'

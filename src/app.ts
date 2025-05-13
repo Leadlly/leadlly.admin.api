@@ -11,6 +11,7 @@ import googleRoutes from './routes/googleAuth'
 import mentorRoutes from './routes/mentorRoutes'
 import studentRoutes from './routes/studentRoutes'
 import instituteRoutes from './routes/instituteRoutes';
+import batchRoutes from './routes/batch';
 
 
 config({
@@ -41,11 +42,12 @@ app.use(
 );
 
 //routes
-app.use('/api/auth/admin', authRoutes)
+app.use('/api/auth', authRoutes)
 app.use("/api/google", googleRoutes);
 app.use("/api/mentor", mentorRoutes);
 app.use("/api/student", studentRoutes);
-app.use('/api/institutes', instituteRoutes);
+app.use("/api/batch", batchRoutes);
+app.use('/api/institute', instituteRoutes);
 
 app.get('/', (req, res) => {
     res.send('Hello, world!');

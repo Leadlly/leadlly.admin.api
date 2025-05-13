@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
-import { Readable } from "stream";
 import { CustomError } from "../../middleware/error";
 import { sendMail } from "../../utils/sendMail";
 import { db } from "../../db/db";
-
+import Institute from "../../models/instituteModel";
+import mongoose from "mongoose";
 
 export const importStudents = async (
   req: Request,
@@ -12,76 +12,38 @@ export const importStudents = async (
   next: NextFunction
 ) => {
   try {
-    const { fileType, data } = req.body;
+    const { emails } = req.body;
+    const instituteId = req.params.instituteId;
     const User = db.collection("users");
     
-    if (!fileType || !data) {
-      return next(new CustomError("File type and data are required", 400));
+    if (!emails || !Array.isArray(emails)) {
+      return next(new CustomError("Student emails must be provided as an array", 400));
     }
     
-    let students: { firstname: string; lastname: string; email: string }[] = [];
-    
-    // Parse data based on file type
-    if (fileType === "csv") {
-      // Parse CSV data
-      const results: any[] = [];
-      const readableStream = Readable.from([data]);
-      
-      // await new Promise((resolve, reject) => {
-      //   readableStream
-      //     .pipe(csv())
-      //     .on("data", (row) => results.push(row))
-      //     .on("end", resolve)
-      //     .on("error", reject);
-      // });
-      
-      students = results.map(row => ({
-        firstname: row.firstname || row.firstName || row["First Name"] || "",
-        lastname: row.lastname || row.lastName || row["Last Name"] || "",
-        email: row.email || row.Email || row["Email Address"] || ""
-      }));
-    } 
-    else if (fileType === "excel") {
-      // Parse Excel data
-      // const workbook = xlsx.read(data, { type: "buffer" });
-      // const sheetName = workbook.SheetNames[0];
-      // const worksheet = workbook.Sheets[sheetName];
-      // const jsonData = xlsx.utils.sheet_to_json(worksheet);
-      
-      // students = jsonData.map((row: any) => ({
-      //   firstname: row.firstname || row.firstName || row["First Name"] || "",
-      //   lastname: row.lastname || row.lastName || row["Last Name"] || "",
-      //   email: row.email || row.Email || row["Email Address"] || ""
-      // }));
-    } 
-    else if (fileType === "text") {
-      // Parse comma-separated text
-      const lines = data.split("\n");
-      
-      students = lines.map((line: string): { firstname: string; lastname: string; email: string } => {
-        const [email, firstname = "", lastname = ""] = line.split(",").map(item => item.trim());
-        return { firstname, lastname, email };
-      });
-    } 
-    else {
-      return next(new CustomError("Invalid file type. Supported types: csv, excel, text", 400));
+    // Fetch institute details
+    const institute = await Institute.findById(instituteId);
+    if (!institute) {
+      return next(new CustomError("Institute not found", 404));
     }
+    
+    // Clean up emails array
+    const emailList = emails.map((email: string) => email.trim()).filter((email: string) => email.length > 0);
     
     // Validate emails
-    const invalidEmails = students.filter(student => !student.email || !isValidEmail(student.email));
+    const invalidEmails = emailList.filter((email: string) => !isValidEmail(email));
     if (invalidEmails.length > 0) {
-      return next(new CustomError(`Invalid email format found in ${invalidEmails.length} records`, 400));
+      return next(new CustomError(`Invalid email format found in ${invalidEmails.length} records: ${invalidEmails.join(', ')}`, 400));
     }
     
-    // Insert students and send reset password emails
+    // Process each email and create students
     const results = await Promise.all(
-      students.map(async (student) => {
+      emailList.map(async (email: string) => {
         try {
           // Check if user already exists
-          const existingUser = await User.findOne({ email: student.email });
+          const existingUser = await User.findOne({ email });
           if (existingUser) {
             return {
-              email: student.email,
+              email,
               status: "skipped",
               message: "User already exists"
             };
@@ -97,34 +59,43 @@ export const importStudents = async (
           // Set expiry for 24 hours
           const resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
           
-          // Create new user
+          // Create new user with email as firstname until they set their profile
           const newUser = await User.insertOne({
-            firstname: student.firstname,
-            lastname: student.lastname,
-            email: student.email,
+            firstname: email.split('@')[0], // Use part before @ as temporary firstname
+            lastname: "",
+            email,
             resetPasswordToken,
             resetTokenExpiry,
-            role: "student" // Assuming 'student' is a valid role in your schema
+            role: "student",
+            institute: {
+              _id: institute._id,
+              name: institute.name,
+              logo: {
+                key: institute.logo || null,
+                url: institute.logo || null,
+              },
+            }
           });
           
           // Send reset password email
-          const resetUrl = `${req.protocol}://${req.get("host")}/reset-password/${resetToken}`;
+          const resetUrl = `${req.protocol}://${process.env.STUDENT_WEB_URL}/reset-password/${resetToken}`;
           
           await sendMail({
-            email: student.email,
+            email,
             subject: "Set Your Password",
             message: `Welcome to our platform! Please click the link below to set your password: ${resetUrl}`,
             tag: "reset"
           });
           
           return {
-            email: student.email,
+            email,
             status: "success",
             message: "User created and email sent"
           };
         } catch (error: any) {
+          console.log(error)
           return {
-            email: student.email,
+            email,
             status: "error",
             message: error.message
           };
@@ -139,7 +110,7 @@ export const importStudents = async (
     
     res.status(200).json({
       success: true,
-      message: `Processed ${students.length} students: ${successCount} added, ${skippedCount} skipped, ${errorCount} failed`,
+      message: `Processed ${emailList.length} students: ${successCount} added, ${skippedCount} skipped, ${errorCount} failed`,
       details: results
     });
   } catch (error: any) {
